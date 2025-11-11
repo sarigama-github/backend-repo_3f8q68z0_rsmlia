@@ -1,6 +1,7 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
 
 app = FastAPI()
 
@@ -11,6 +12,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 @app.get("/")
 def read_root():
@@ -63,6 +68,23 @@ def test_database():
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     
     return response
+
+@app.post("/auth/login")
+def login(payload: LoginRequest):
+    # Demo validation: require a minimum password length and specific keyword for cybersecurity theme
+    if len(payload.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    # Optional themed demo rule: accept if password contains 'cyber' or equals 'cyber@123'
+    if (payload.password.lower().find("cyber") == -1) and payload.password != "cyber@123":
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Return a simple demo token
+    return {
+        "message": "Login successful",
+        "token": "demo-token-xyz",
+        "email": payload.email
+    }
 
 
 if __name__ == "__main__":
